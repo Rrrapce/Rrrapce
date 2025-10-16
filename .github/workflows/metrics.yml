@@ -1,4 +1,4 @@
-name: Generate Metrics (to /Images)
+name: Generate Metrics
 
 on:
   schedule:
@@ -100,24 +100,25 @@ jobs:
           user: Rrrapce
           base: ""
           plugin_wakatime: yes
-          plugin_wakatime_token: ${{ secrets.WAKATIME_TOKEN }}
+          plugin_wakatime_token: ${{ secrets.WAKATIME_API_KEY }}
           plugin_wakatime_days: 30
           plugin_wakatime_sections: time, projects, languages, languages-graphs
           config_timezone: Europe/Sarajevo
 
-      # 7) Repository (template: repository)
+      # 7) Repository (template: repository) — tvoje ime i tvoj repo
       - name: Repository (template)
         uses: lowlighter/metrics@latest
         with:
           template: repository
           filename: Images/metrics.repository.svg
-          token: ${{ secrets.METRICS_TOKEN_WITH_SCOPES }}   # classic PAT sa `repo`
-          user: lowlighter
-          repo: metrics
+          token: ${{ secrets.METRICS_TOKEN }}   # PAT je OK
+          user: Rrrapce
+          repo: Rrrapce
           plugin_lines: yes
           plugin_followup: yes
           plugin_projects: yes
-          plugin_projects_repositories: lowlighter/metrics/projects/1
+          # ako nemaš GitHub Projects, slobodno ukloni narednu liniju:
+          # plugin_projects_repositories: Rrrapce/Rrrapce/projects/1
           config_timezone: Europe/Sarajevo
 
       # 8) WakaTime (7 i 30 dana – dodatni grafovi)
@@ -129,7 +130,7 @@ jobs:
           user: Rrrapce
           base: ""
           plugin_wakatime: yes
-          plugin_wakatime_token: ${{ secrets.WAKATIME_TOKEN }}
+          plugin_wakatime_token: ${{ secrets.WAKATIME_API_KEY }}
           plugin_wakatime_days: 7
           plugin_wakatime_sections: time, projects, languages, languages-graphs
           config_timezone: Europe/Sarajevo
@@ -142,7 +143,7 @@ jobs:
           user: Rrrapce
           base: ""
           plugin_wakatime: yes
-          plugin_wakatime_token: ${{ secrets.WAKATIME_TOKEN }}
+          plugin_wakatime_token: ${{ secrets.WAKATIME_API_KEY }}
           plugin_wakatime_days: 30
           plugin_wakatime_sections: time, projects, languages, languages-graphs
           config_timezone: Europe/Sarajevo
