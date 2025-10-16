@@ -14,6 +14,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       # 0) General (minimal classic)
       - name: General metrics (classic minimal)
@@ -149,11 +151,23 @@ jobs:
           config_timezone: Europe/Sarajevo
 
       # Commit svih novonastalih slika pod tvojim imenom
-      - name: Commit generated images
+      - name: Commit & push generated images
         run: |
           set -euxo pipefail
           git config user.name "Rrrapce"
           git config user.email "Rrrapce@users.noreply.github.com"
-          git add Images/*.svg
-          git commit -m "Update metrics in /Images" || echo "No changes"
+          git add Images/*.svg || true
+      
+          # Ako nema ništa staged -> prekini bez greške
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+      
+          git commit -m "Update metrics in /Images"
+      
+          # Povuci remote promjene prije push-a (rebase)
+          git pull --rebase origin "${GITHUB_REF_NAME:-main}" || git pull --rebase origin main
+      
+          # Sad guraj
           git push
