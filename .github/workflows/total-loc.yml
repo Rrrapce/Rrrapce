@@ -1,0 +1,76 @@
+name: Total LOC
+on:
+  schedule:
+    - cron: "25 1 * * *"     # jednom dnevno
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  count-loc:
+    runs-on: ubuntu-latest
+    env:
+      GH_USER: Rrrapce
+    steps:
+      - name: Checkout profile repo
+        uses: actions/checkout@v4
+
+      - name: Auth GH CLI
+        run: echo "${{ github.token }}" | gh auth login --with-token
+
+      - name: List repos (bez fork/archived)
+        run: |
+          gh repo list "$GH_USER" --limit 200 --json name,isFork,archived,visibility \
+          | jq -r '.[] | select(.isFork==false and .archived==false) | .name' > repos.txt
+          echo "Repos:"; cat repos.txt
+
+      - name: Clone all repos (shallow)
+        run: |
+          mkdir -p /tmp/allrepos
+          while read -r r; do
+            echo "Cloning $GH_USER/$r"
+            git clone --depth 1 "https://github.com/$GH_USER/$r.git" "/tmp/allrepos/$r" || true
+          done < repos.txt
+
+      - name: Install scc (fast SLOC counter)
+        run: |
+          curl -L https://github.com/boyter/scc/releases/latest/download/scc_Linux_x86_64.tar.gz -o scc.tgz
+          tar -xzf scc.tgz
+          sudo mv scc /usr/local/bin/scc
+
+      - name: Count LOC
+        run: |
+          # ignoriraj uobičajene build/venv direktorije
+          EXCLUDES="--exclude-dir=node_modules --exclude-dir=dist --exclude-dir=build --exclude-dir=.git --exclude-dir=bin --exclude-dir=obj --exclude-dir=.venv --exclude-dir=venv"
+          scc $EXCLUDES --format json /tmp/allrepos > loc.json
+          TOTAL=$(jq '[.[] | select(.Name=="Total") | .Code] | add' loc.json)
+          # fallback ako nema "Total" po repo-u → sumiraj sve Code
+          if [ -z "$TOTAL" ] || [ "$TOTAL" = "null" ]; then
+            TOTAL=$(jq '[.[] | .Code] | add' loc.json)
+          fi
+          # format sa hiljadarkama
+          FMT=$(python3 - <<PY
+n=int("$TOTAL"); print(f"{n:,}".replace(",", "."))
+PY
+)
+          echo "TOTAL_LOC=$FMT" | tee total_loc.env
+
+      - name: Update README
+        run: |
+          source total_loc.env
+          tmp=$(mktemp)
+          awk -v repl="**Total lines of code:** ${TOTAL_LOC}" '
+            BEGIN{show=1}
+            /<!--TOTAL_LOC_START-->/ {print; print repl; show=0; next}
+            /<!--TOTAL_LOC_END-->/   {show=1}
+            show{print}
+          ' README.md > "$tmp" && mv "$tmp" README.md
+
+      - name: Commit
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "actions@github.com"
+          git add README.md
+          git commit -m "Update Total LOC" || echo "No changes"
+          git push
