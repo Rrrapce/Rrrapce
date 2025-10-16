@@ -1,68 +1,100 @@
-name: Generate Metrics
+name: Generate Metrics (multi)
 
 on:
   schedule:
     - cron: "0 */12 * * *"
   workflow_dispatch:
-  push:
-    branches: ["main"]
 
 permissions:
   contents: write
 
 jobs:
-  github-metrics:
+  metrics:
     runs-on: ubuntu-latest
     steps:
-      - name: Generate metrics
-        uses: lowlighter/metrics@latest
+      # 1) habits.charts
+      - uses: lowlighter/metrics@latest
         with:
           token: ${{ secrets.METRICS_TOKEN }}
           user: Rrrapce
+          base: ""                         # čisto, bez header/community
           template: classic
-          # ostavi SAMO 'header' da bi imao "Joined GitHub" i "Contributed to"
-          base: header
-          config_timezone: Europe/Sarajevo
-          filename: github-metrics.svg
+          filename: metrics.plugin.habits.charts.svg
           committer_token: ${{ github.token }}
+          config_timezone: Europe/Sarajevo
+          plugin_habits: yes
+          plugin_habits_charts: yes
+          plugin_habits_days: 30
+          plugin_habits_from: 200
+          plugin_habits_trim: yes
 
-          # Kompaktna aktivnost: samo dodano/obrisano (bez velikog “Activity” bloka)
-          plugin_lines: yes
-          plugin_lines_history_limit: 12
+      # 2) introduction
+      - uses: lowlighter/metrics@latest
+        with:
+          token: ${{ secrets.METRICS_TOKEN }}
+          user: Rrrapce
+          base: ""
+          template: classic
+          filename: metrics.plugin.introduction.svg
+          committer_token: ${{ github.token }}
+          plugin_introduction: yes
+          plugin_introduction_title: yes
 
-          # Skidamo sve što si označio crveno:
-          # (NIŠTA od sljedećeg ne uključujemo)
-          # plugin_followup: no            # (issues/PR status)
-          # plugin_pagespeed: no           # (PageSpeed)
-          # plugin_habits: no              # (recent coding habits grafovi)
-          # plugin_languages: no           # (ostaje po želji)
-          # plugin_activity: no            # (veliki “Activity” listing)
-
-          # Ako želiš Most used languages i WakaTime zadrži:
+      # 3) languages (indepth)
+      - uses: lowlighter/metrics@latest
+        with:
+          token: ${{ secrets.METRICS_TOKEN }}
+          user: Rrrapce
+          base: ""
+          template: classic
+          filename: metrics.plugin.languages.indepth.svg
+          committer_token: ${{ github.token }}
           plugin_languages: yes
-          plugin_languages_sections: most-used
-          plugin_languages_limit: 10
+          plugin_languages_indepth: true
+          plugin_languages_sections: most-used, recently-used
+          plugin_languages_limit: 12
+          plugin_languages_recent_days: 30
           plugin_languages_details: percentage
           plugin_languages_threshold: 1%
           plugin_languages_other: true
           plugin_languages_aliases: "C++:CPP, C#:CSharp"
 
+      # 4) wakatime
+      - uses: lowlighter/metrics@latest
+        with:
+          token: ${{ secrets.METRICS_TOKEN }}
+          user: Rrrapce
+          base: ""
+          template: classic
+          filename: metrics.plugin.wakatime.svg
+          committer_token: ${{ github.token }}
+          config_timezone: Europe/Sarajevo
           plugin_wakatime: yes
           plugin_wakatime_token: ${{ secrets.WAKATIME_API_KEY }}
           plugin_wakatime_days: 7
           plugin_wakatime_sections: time, projects, languages, editors
           plugin_wakatime_limit: 5
-          plugin_wakatime_url: https://wakatime.com
 
-          # (ostali tvoji pluginovi koje želiš, npr. achievements, topics…)
-          plugin_achievements: yes
-          plugin_achievements_threshold: C
-          plugin_achievements_secrets: yes
-          plugin_achievements_display: compact
+      # 5) repository (featured/pinned)
+      - uses: lowlighter/metrics@latest
+        with:
+          token: ${{ secrets.METRICS_TOKEN }}
+          user: Rrrapce
+          base: ""
+          template: classic
+          filename: metrics.repository.svg
+          committer_token: ${{ github.token }}
+          plugin_repositories: yes
+          plugin_repositories_pinned: 6      # koliko prikazati (promijeni po želji)
+          plugin_repositories_starred: no
+          plugin_repositories_order: featured
 
-          plugin_topics: yes
-          plugin_topics_mode: mastered
-          plugin_topics_sort: stars
-          plugin_topics_limit: 12
-          plugin_topics_edges: rounded
-          plugin_topics_colors: github
+      # 6) classic komplet (po želji)
+      - uses: lowlighter/metrics@latest
+        with:
+          token: ${{ secrets.METRICS_TOKEN }}
+          user: Rrrapce
+          template: classic
+          base: header, activity, repositories  # minimalistički classic
+          filename: metrics.classic.svg
+          committer_token: ${{ github.token }}
