@@ -1,0 +1,30 @@
+name: Generate Metrics
+
+on:
+  schedule:
+    - cron: "0 */12 * * *"   # pokreće se svakih 12h
+  workflow_dispatch:          # možeš ručno pokrenuti
+  push:
+    branches: ["main"]
+
+jobs:
+  github-metrics:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate metrics
+        uses: lowlighter/metrics@latest
+        with:
+          # Osnovno
+          token: ${{ secrets.METRICS_TOKEN }}
+          user: RamizSuvalija       # <-- stavi svoj GitHub username
+          template: classic
+          base: header, activity, community, repositories
+          config_timezone: Europe/Sarajevo
+
+          # 🔹 WakaTime plugin
+          plugin_wakatime: yes
+          plugin_wakatime_token: ${{ secrets.WAKATIME_API_KEY }}
+          plugin_wakatime_days: 7          # broj dana za prikaz
+          plugin_wakatime_sections: time, projects, languages, editors
+          plugin_wakatime_limit: 5
+          plugin_wakatime_url: https://wakatime.com
