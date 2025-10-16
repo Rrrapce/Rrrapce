@@ -2,10 +2,13 @@ name: Generate Metrics
 
 on:
   schedule:
-    - cron: "0 */12 * * *"   # pokreće se svakih 12h
-  workflow_dispatch:          # možeš ručno pokrenuti
+    - cron: "0 */12 * * *"   # svaka 12h
+  workflow_dispatch:
   push:
     branches: ["main"]
+
+permissions:
+  contents: write   # da može committati SVG
 
 jobs:
   github-metrics:
@@ -15,16 +18,40 @@ jobs:
         uses: lowlighter/metrics@latest
         with:
           # Osnovno
-          token: ${{ secrets.METRICS_TOKEN }}
-          user: RamizSuvalija       # <-- stavi svoj GitHub username
+          token: ${{ secrets.METRICS_TOKEN }}         # PAT: read:user (+ repo ako želiš privatne)
+          user: RamizSuvalija                         # <-- promijeni ako je drugačije
           template: classic
           base: header, activity, community, repositories
           config_timezone: Europe/Sarajevo
 
-          # 🔹 WakaTime plugin
+          # Commit output
+          filename: github-metrics.svg
+          committer_token: ${{ github.token }}        # koristi ugrađeni token s gore datim permissions
+
+          # 🔹 WakaTime
           plugin_wakatime: yes
           plugin_wakatime_token: ${{ secrets.WAKATIME_API_KEY }}
-          plugin_wakatime_days: 7          # broj dana za prikaz
+          plugin_wakatime_days: 7
           plugin_wakatime_sections: time, projects, languages, editors
           plugin_wakatime_limit: 5
           plugin_wakatime_url: https://wakatime.com
+
+          # 🔹 Streaks / ritam (isocalendar)
+          plugin_isocalendar: yes
+          plugin_isocalendar_duration: full-year
+
+          # 🔹 Top jezici
+          plugin_languages: yes
+          plugin_languages_limit: 8
+          plugin_languages_sections: most-used
+          plugin_languages_aliases: "C++:CPP, C#:CSharp"
+          plugin_languages_threshold: 1%
+          plugin_languages_details: percentage
+          plugin_languages_recent_days: 30
+          plugin_languages_other: true
+
+          # 🔹 Achievements
+          plugin_achievements: yes
+          plugin_achievements_threshold: C
+          plugin_achievements_secrets: yes
+          plugin_achievements_display: compact
