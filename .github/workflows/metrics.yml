@@ -1,4 +1,4 @@
-name: Generate Metrics (multi)
+name: Clean & Generate Metrics (into /metrics)
 
 on:
   schedule:
@@ -9,108 +9,168 @@ permissions:
   contents: write
 
 jobs:
-  metrics:
+  build:
     runs-on: ubuntu-latest
     steps:
-      # 1) habits.charts
-      - uses: lowlighter/metrics@latest
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # --- CLEANUP -----------------------------------------------------------
+      - name: Remove old SVGs and Images folder
+        run: |
+          set -euxo pipefail
+          # Pobriši tačno ove fajlove ako postoje
+          rm -f \
+            github-metrics.svg \
+            metrics.classic.svg \
+            metrics.contributions.calendar.svg \
+            metrics.plugin.habits.charts.svg \
+            metrics.plugin.introduction.svg \
+            metrics.plugin.languages.indepth.svg \
+            metrics.plugin.wakatime.svg \
+            metrics.repository.svg \
+            wakatime-week.svg \
+            wakatime-month.svg
+          # Pobriši stari folder Images/ ako postoji
+          rm -rf Images
+          # Kreiraj novi odredišni folder
+          mkdir -p metrics
+
+      # --- (RE)GENERISANJE U /metrics ---------------------------------------
+      # 0) general (bio je github-metrics.svg) – minimalan "classic" setup
+      - name: General metrics (classic minimal)
+        uses: lowlighter/metrics@latest
         with:
           token: ${{ secrets.METRICS_TOKEN }}
           user: Rrrapce
-          base: ""                         # čisto, bez header/community
           template: classic
-          filename: metrics.plugin.habits.charts.svg
-          committer_token: ${{ github.token }}
+          base: header
+          filename: metrics/github-metrics.svg
           config_timezone: Europe/Sarajevo
-          plugin_habits: yes
-          plugin_habits_charts: yes
-          plugin_habits_days: 30
-          plugin_habits_from: 200
-          plugin_habits_trim: yes
 
-      # 2) introduction
-      - uses: lowlighter/metrics@latest
+      # 1) Example (classic)
+      - name: Example (classic)
+        uses: lowlighter/metrics@latest
         with:
+          filename: metrics/metrics.classic.svg
+          token: ${{ secrets.METRICS_TOKEN }}
+          user: Rrrapce
+          base: header, repositories
+          plugin_lines: yes
+
+      # 2) Full-year calendar (isocalendar)
+      - name: Full-year calendar
+        uses: lowlighter/metrics@latest
+        with:
+          filename: metrics/metrics.contributions.calendar.svg
           token: ${{ secrets.METRICS_TOKEN }}
           user: Rrrapce
           base: ""
-          template: classic
-          filename: metrics.plugin.introduction.svg
-          committer_token: ${{ github.token }}
+          plugin_isocalendar: yes
+          plugin_isocalendar_duration: full-year
+          config_timezone: Europe/Sarajevo
+
+      # 3) Introduction
+      - name: Introduction
+        uses: lowlighter/metrics@latest
+        with:
+          filename: metrics/metrics.plugin.introduction.svg
+          token: ${{ secrets.METRICS_TOKEN }}
+          user: Rrrapce
+          base: ""
           plugin_introduction: yes
           plugin_introduction_title: yes
 
-      # 3) languages (indepth)
-      - uses: lowlighter/metrics@latest
+      # 4) Languages (indepth)
+      - name: Languages indepth
+        uses: lowlighter/metrics@latest
         with:
+          filename: metrics/metrics.plugin.languages.indepth.svg
           token: ${{ secrets.METRICS_TOKEN }}
           user: Rrrapce
           base: ""
-          template: classic
-          filename: metrics.plugin.languages.indepth.svg
-          committer_token: ${{ github.token }}
           plugin_languages: yes
-          plugin_languages_indepth: true
-          plugin_languages_sections: most-used, recently-used
-          plugin_languages_limit: 12
-          plugin_languages_recent_days: 30
-          plugin_languages_details: percentage
-          plugin_languages_threshold: 1%
-          plugin_languages_other: true
-          plugin_languages_aliases: "C++:CPP, C#:CSharp"
+          plugin_languages_ignored: >-
+            html, css, tex, less, dockerfile, makefile, qmake, lex, cmake, shell, gnuplot
+          plugin_languages_indepth: yes
+          plugin_languages_details: lines, bytes-size
+          plugin_languages_limit: 6
+          plugin_languages_analysis_timeout: 15
 
-      # 4) wakatime
-      - uses: lowlighter/metrics@latest
+      # 5) Habits charts
+      - name: Recent activity charts
+        uses: lowlighter/metrics@latest
         with:
+          filename: metrics/metrics.plugin.habits.charts.svg
           token: ${{ secrets.METRICS_TOKEN }}
           user: Rrrapce
           base: ""
-          template: classic
-          filename: metrics.plugin.wakatime.svg
-          committer_token: ${{ github.token }}
+          plugin_habits: yes
+          plugin_habits_facts: no
+          plugin_habits_charts: yes
           config_timezone: Europe/Sarajevo
+
+      # 6) WakaTime (30 dana – tražene sekcije)
+      - name: WakaTime (30 days)
+        uses: lowlighter/metrics@latest
+        with:
+          filename: metrics/metrics.plugin.wakatime.svg
+          token: ${{ github.token }}                         # za commit nije potreban PAT
+          user: Rrrapce
+          base: ""
           plugin_wakatime: yes
-          plugin_wakatime_token: ${{ secrets.WAKATIME_API_KEY }}
-          plugin_wakatime_days: 7
-          plugin_wakatime_sections: time, projects, languages, editors
-          plugin_wakatime_limit: 5
-
-      # 5) repository (featured/pinned)
-      - uses: lowlighter/metrics@latest
-        with:
-          token: ${{ secrets.METRICS_TOKEN }}
-          user: Rrrapce
-          base: ""
-          template: classic
-          filename: metrics.repository.svg
-          committer_token: ${{ github.token }}
-          plugin_repositories: yes
-          plugin_repositories_pinned: 6      # koliko prikazati (promijeni po želji)
-          plugin_repositories_starred: no
-          plugin_repositories_order: featured
-
-      # 6) classic komplet (po želji)
-      - uses: lowlighter/metrics@latest
-        with:
-          token: ${{ secrets.METRICS_TOKEN }}
-          user: Rrrapce
-          template: classic
-          base: header, activity, repositories  # minimalistički classic
-          filename: metrics.classic.svg
-          committer_token: ${{ github.token }}
-
-
-      # 7) contributions calendar (isocalendar)
-      - uses: lowlighter/metrics@latest
-        with:
-          token: ${{ secrets.METRICS_TOKEN }}
-          user: Rrrapce
-          base: ""                       # čist output, samo kalendar
-          template: classic
-          filename: metrics.contributions.calendar.svg
-          committer_token: ${{ github.token }}
+          plugin_wakatime_token: ${{ secrets.WAKATIME_TOKEN }}
+          plugin_wakatime_days: 30
+          plugin_wakatime_sections: time, projects, languages, languages-graphs
           config_timezone: Europe/Sarajevo
 
-          plugin_isocalendar: yes
-          plugin_isocalendar_duration: full-year   # opcije: half-year | full-year
+      # 7) Repository (template: repository)
+      - name: Repository (template)
+        uses: lowlighter/metrics@latest
+        with:
+          template: repository
+          filename: metrics/metrics.repository.svg
+          token: ${{ secrets.METRICS_TOKEN_WITH_SCOPES }}     # classic PAT sa `repo`
+          user: lowlighter
+          repo: metrics
+          plugin_lines: yes
+          plugin_followup: yes
+          plugin_projects: yes
+          plugin_projects_repositories: lowlighter/metrics/projects/1
 
+      # 8) WakaTime week & month (ako želiš zadržati)
+      - name: WakaTime (7 days)
+        uses: lowlighter/metrics@latest
+        with:
+          filename: metrics/wakatime-week.svg
+          token: ${{ github.token }}
+          user: Rrrapce
+          base: ""
+          plugin_wakatime: yes
+          plugin_wakatime_token: ${{ secrets.WAKATIME_TOKEN }}
+          plugin_wakatime_days: 7
+          plugin_wakatime_sections: time, projects, languages, languages-graphs
+          config_timezone: Europe/Sarajevo
+
+      - name: WakaTime (30 days copy)
+        uses: lowlighter/metrics@latest
+        with:
+          filename: metrics/wakatime-month.svg
+          token: ${{ github.token }}
+          user: Rrrapce
+          base: ""
+          plugin_wakatime: yes
+          plugin_wakatime_token: ${{ secrets.WAKATIME_TOKEN }}
+          plugin_wakatime_days: 30
+          plugin_wakatime_sections: time, projects, languages, languages-graphs
+          config_timezone: Europe/Sarajevo
+
+      # --- SINGLE COMMIT -----------------------------------------------------
+      - name: Commit generated images
+        run: |
+          set -euxo pipefail
+          git config user.name  "github-actions[bot]"
+          git config user.email "actions@github.com"
+          git add -A
+          git commit -m "Clean root svgs, generate under /metrics" || echo "No changes"
+          git push
