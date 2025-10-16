@@ -19,7 +19,7 @@ jobs:
         with:
           # Osnovno
           token: ${{ secrets.METRICS_TOKEN }}         # PAT: read:user (+ repo ako želiš privatne)
-          user: RamizSuvalija                         # <-- promijeni ako je drugačije
+          user: Rrrapce                         # <-- promijeni ako je drugačije
           template: classic
           base: header, activity, community, repositories
           config_timezone: Europe/Sarajevo
