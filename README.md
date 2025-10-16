@@ -1,4 +1,18 @@
-# 👋 Hi, I'm **Ramiz Šuvalija**
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr>
+    <td valign="top" width="50%">
+      <img src="./Images/github-metrics.svg" alt="General metrics" width="100%" />
+      <br/>
+      <img src="./Images/metrics.plugin.wakatime.svg" alt="WakaTime 30d" width="100%" />
+    </td>
+    <td valign="top" width="50%">
+      <img src="./Images/metrics.contributions.calendar.svg" alt="Contributions calendar" width="100%" />
+    </td>
+  </tr>
+</table>
+
+
+
 
 💼 **Rajz d.o.o. Sarajevo**  
 🧠 **.NET Developer | PostgreSQL Developer | ERP System Architect**
