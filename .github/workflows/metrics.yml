@@ -2,7 +2,7 @@ name: Generate Metrics
 
 on:
   schedule:
-    - cron: "0 */12 * * *"      # svaka 12h
+    - cron: "0 */12 * * *"
   workflow_dispatch:
   push:
     branches: ["main"]
@@ -17,43 +17,36 @@ jobs:
       - name: Generate metrics
         uses: lowlighter/metrics@latest
         with:
-          # Osnovno
-          token: ${{ secrets.METRICS_TOKEN }}          # PAT: read:user (+ repo ako želiš privatne)
-          user: Rrrapce                                 # <-- tvoj GitHub username
+          token: ${{ secrets.METRICS_TOKEN }}
+          user: Rrrapce
           template: classic
-          base: header, activity, community, repositories  # header: "Joined GitHub"; community/repositories: "Contributed to X"
+          # ostavi SAMO 'header' da bi imao "Joined GitHub" i "Contributed to"
+          base: header
           config_timezone: Europe/Sarajevo
           filename: github-metrics.svg
           committer_token: ${{ github.token }}
 
-          # 🔹 Activity (commits) + added/removed (lines)
-          plugin_activity: yes
-          plugin_activity_limit: 5
-          plugin_activity_timestamps: yes
-          plugin_lines: yes                                # "X added, X removed"
-          plugin_lines_history_limit: 12                   # mjesečni scope (možeš dići/smanjiti)
+          # Kompaktna aktivnost: samo dodano/obrisano (bez velikog “Activity” bloka)
+          plugin_lines: yes
+          plugin_lines_history_limit: 12
 
-          # 🔹 Commit activity per time of day / per day
-          plugin_habits: yes
-          plugin_habits_from: 200                         # broj eventa za analizu
-          plugin_habits_days: 30                          # zadnjih 30 dana
-          plugin_habits_charts: yes                       # grafovi (time-of-day, day-of-week)
-          plugin_habits_trim: yes                         # sakrij 0-value sate/dane
+          # Skidamo sve što si označio crveno:
+          # (NIŠTA od sljedećeg ne uključujemo)
+          # plugin_followup: no            # (issues/PR status)
+          # plugin_pagespeed: no           # (PageSpeed)
+          # plugin_habits: no              # (recent coding habits grafovi)
+          # plugin_languages: no           # (ostaje po želji)
+          # plugin_activity: no            # (veliki “Activity” listing)
 
-          # 🔹 Contributions calendar (heatmap)
-          plugin_isocalendar: yes
-          plugin_isocalendar_duration: full-year
-
-          # 🔹 Languages (Most used)
+          # Ako želiš Most used languages i WakaTime zadrži:
           plugin_languages: yes
-          plugin_languages_limit: 10
           plugin_languages_sections: most-used
+          plugin_languages_limit: 10
           plugin_languages_details: percentage
           plugin_languages_threshold: 1%
           plugin_languages_other: true
           plugin_languages_aliases: "C++:CPP, C#:CSharp"
 
-          # 🔹 Language activity (WakaTime) — “Current total coding time by language/projects/editors”
           plugin_wakatime: yes
           plugin_wakatime_token: ${{ secrets.WAKATIME_API_KEY }}
           plugin_wakatime_days: 7
@@ -61,67 +54,15 @@ jobs:
           plugin_wakatime_limit: 5
           plugin_wakatime_url: https://wakatime.com
 
-          # 🔹 Issues & PRs (Closed/Open, Merged/Open) — follow-up preko svih repo-a
-          plugin_followup: yes
-          plugin_followup_sections: repositories, user
-          plugin_followup_indepth: yes
-
-          # 🔹 Achievements (sažeto, izgleda fensi)
+          # (ostali tvoji pluginovi koje želiš, npr. achievements, topics…)
           plugin_achievements: yes
           plugin_achievements_threshold: C
           plugin_achievements_secrets: yes
           plugin_achievements_display: compact
 
-          # 🔹 PageSpeed Insights (opcionalno) — postavi URL svoje stranice
-          plugin_pagespeed: yes
-          plugin_pagespeed_url: https://agentkoala.com   # <-- promijeni
-          plugin_pagespeed_detailed: yes
-          plugin_pagespeed_screenshot: yes
-
-          # 🔹 Mastered technologies & topics
           plugin_topics: yes
-          plugin_topics_mode: mastered           # "mastered" > "starred" > "top"
-          plugin_topics_sort: stars              # rangiraj po zvjezdicama
-          plugin_topics_limit: 12                # koliko prikazati
+          plugin_topics_mode: mastered
+          plugin_topics_sort: stars
+          plugin_topics_limit: 12
           plugin_topics_edges: rounded
           plugin_topics_colors: github
-
-  github-metrics-wakatime-week:
-    runs-on: ubuntu-latest
-    steps:
-      - name: WakaTime (last 7 days)
-        uses: lowlighter/metrics@latest
-        with:
-          token: ${{ github.token }}
-          user: Rrrapce
-          template: classic
-          base: ""
-          filename: wakatime-week.svg
-          committer_token: ${{ github.token }}
-          plugin_wakatime: yes
-          plugin_wakatime_token: ${{ secrets.WAKATIME_API_KEY }}
-          plugin_wakatime_days: 7
-          plugin_wakatime_sections: time, languages, projects, editors
-          plugin_wakatime_limit: 5
-          plugin_wakatime_url: https://wakatime.com
-          config_timezone: Europe/Sarajevo
-
-  github-metrics-wakatime-month:
-    runs-on: ubuntu-latest
-    steps:
-      - name: WakaTime (last 30 days)
-        uses: lowlighter/metrics@latest
-        with:
-          token: ${{ github.token }}
-          user: Rrrapce
-          template: classic
-          base: ""
-          filename: wakatime-month.svg
-          committer_token: ${{ github.token }}
-          plugin_wakatime: yes
-          plugin_wakatime_token: ${{ secrets.WAKATIME_API_KEY }}
-          plugin_wakatime_days: 30
-          plugin_wakatime_sections: time, languages, projects, editors
-          plugin_wakatime_limit: 5
-          plugin_wakatime_url: https://wakatime.com
-          config_timezone: Europe/Sarajevo
