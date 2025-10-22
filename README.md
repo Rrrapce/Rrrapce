@@ -1,9 +1,7 @@
 <p align="center">
   <img src="./Images/github-metrics.svg" alt="General" width="50%" />
 </p>
-<p align="center">
-  <img src="./Images/metrics.plugin.wakatime.svg" alt="WakaTime 30d" width="50%" />
-</p>
+
 <p align="center">
   <img src="./Images/metrics.contributions.calendar.svg" alt="Contributions calendar" width="50%" />
 </p>
